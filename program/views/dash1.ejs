@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://d3js.org/topojson.v1.min.js"></script>
+</head>
+<style>
+    .grid-container {
+        display: flex;
+        /* grid-template-columns: 45% 45%; */
+        justify-content: space-around;
+        padding: 5px;
+        height: calc(100% - 40px);
+    }
+
+    .grid-item {
+        padding: 2px;
+    }
+
+    body {
+        background-color: #ECF2FF;
+        text-align: center;
+        justify-content: center;
+        margin: 0;
+        padding: 0;
+
+    }
+
+    #plot3 {
+        transform: scale(0.95);
+        margin-top: -7em;
+        margin-bottom: 0;
+        margin-left:-10em ;
+        width: 100%;
+    }
+
+    h2 {
+        padding: 0;
+        margin: 0;
+        text-align: center;
+    }
+
+    #tooltip {
+        position: absolute;
+        width: auto;
+        height: auto;
+        padding: 5px;
+        background-color: white;
+        -webkit-border-radius: 3;
+        -moz-border-radius: 3;
+        border-radius: 3;
+        -webkit-box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
+        -moz-box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
+        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
+        pointer-events: none;
+    }
+
+    #tooltip.hidden {
+        display: none;
+    }
+
+    #tooltip p {
+        margin: 0;
+        font-family: sans-serif;
+        font-size: 16px;
+        line-height: 16px;
+    }
+</style>
+
+<body>
+    <div class="grid-container">
+        <div class='grid-item' id="plot1">
+            <h3>Mismanaged Plastic Waste to Ocean (Per Capita Per Kg)</h3>
+        </div>
+        <div class='grid-item' id="plot2"></div>
+    </div>
+    <div class="grid-container">
+        <div class='grid-item' id="plot3"></div>
+    </div>
+    <div id="tooltip" class="hidden">
+        <p><span id="value"> </span></p>
+    </div>
+
+    <script>
+        var height = 350;
+        var width = 500;
+        var padding = 50;
+
+        function makeAxisTitles(svg, yaxis, xaxis) {
+            svg.append("text")
+                .attr("transform", "translate(" + (padding / 5) + ", " + (height / 2) + ") rotate(-90)")
+                .attr("dy", "1em")
+                .style("font-size", "1.2em")
+                .style("text-anchor", "middle")
+                .style("font-family", "sans-serif")
+                .text(yaxis);
+
+            svg.append("text")
+                .attr("transform", "translate(" + (width / 2) + "," + (height - padding / 2) + ")")
+                .attr("dy", "1em")
+                .attr("class", "x-axis-title")
+                .attr("font-size", "1.2em")
+                .style("text-anchor", "middle")
+                .style("font-family", "sans-serif")
+                .text(xaxis);
+        }
+
+        const svg = d3.select('body').select("#plot1")
+            .append('svg')
+            .attr('width', width)
+            .attr('height', height);
+
+        const svg2 = d3.select("body").select("#plot2")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height)
+
+        const svg3 = d3.select("body").select("#plot3")
+            .append("svg")
+            .attr("width", 1620)
+            .attr("height", 400)
+
+        const projection = d3.geoMercator().scale(80).translate([width / 2, height / 1.4]);
+        const path = d3.geoPath(projection)
+
+        const g = svg.append('g');
+
+        makeAxisTitles(svg2, "Mismanaged Plastic Waste", "Mismanaged Plastic Waste to Ocean")
+        makeAxisTitles(svg3, "Plastic Waste to Ocean", "")
+
+        d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json').then(data => {
+            const countries = topojson.feature(data, data.objects.countries);
+            d3.csv('/data.csv').then(csvData => {
+                csvData.forEach(d => {
+                    d.Mismanaged_plastic_waste_per_capita_kgperyear = +d.Mismanaged_plastic_waste_per_capita_kgperyear;
+                    d.Mismanaged_plastic_waste_to_ocean_per_capita_kgperyear = +d.Mismanaged_plastic_waste_to_ocean_per_capita_kgperyear
+                });
+
+                var geos = g.selectAll('path')
+                    .data(countries.features)
+                    .enter()
+                    .append('path')
+                    .attr('class', 'country')
+                    .attr('d', path)
+                    .style("fill", "#98DFD6")
+                    .style("stroke", "#333");
+
+                geos.on("mouseover", function (d) {
+                    var countryName = d.properties.name
+                    d3.select(this)
+                        .transition()
+                        .duration(150)
+                        .style("fill", "red")
+
+                    var xPosition = 250;
+                    var yPosition = 250;
+
+                    d3.select("#tooltip")
+                        .style("left", (d3.event.pageX) + "px")
+                        .style("top", (d3.event.pageY - 30) + "px")
+                        .select("#value")
+                        .text(d.properties.name)
+
+                    d3.select("#tooltip").classed("hidden", false)
+
+                    svg2.selectAll("circle")
+                        .transition()
+                        .duration(200)
+                        .filter(function (csvData) { return d.properties.name == csvData.Entity })
+                        .style("fill", "red")
+                        .attr("r", 10)
+                        .style("opacity", 1)
+
+                    svg3.selectAll("rect")
+                        .transition()
+                        .duration(200)
+                        .filter(function (csvData) { return d.properties.name == csvData.Entity })
+                        .style("fill", "red")
+                });
+
+                geos.on("mouseout", function (d) {
+                    d3.select(this)
+                        .transition()
+                        .duration(300)
+                        .style("fill", "#98DFD6");
+
+                    d3.select("#tooltip").classed("hidden", true)
+
+                    svg2.selectAll("circle").style("fill", "#002B5B").attr("r", 3).style("opacity", 0.5)
+                    svg3.selectAll("rect").style("fill", "#060047")
+                });
+
+                var xScale = d3.scaleLinear()
+                    .domain([0, d3.max(csvData, d => d.Mismanaged_plastic_waste_to_ocean_per_capita_kgperyear)])
+                    .range([0 + padding + 40, width - padding])
+
+                var yScale = d3.scaleLinear()
+                    .domain([0, d3.max(csvData, d => d.Mismanaged_plastic_waste_per_capita_kgperyear)])
+                    .range([height - padding, 0 + padding])
+
+                svg2.append("g")
+                    .attr("class", "y-axis")
+                    .style("font-family", "sans-serif")
+                    .style("font-size", "0.75em")
+                    .attr("transform", "translate(" + (padding + 40) + "," + 0 + ")")
+                    .call(d3.axisLeft().scale(yScale))
+
+                svg2.append("g")
+                    .attr("class", "x-axis")
+                    .style("font-family", "sans-serif")
+                    .style("font-size", "0.75em")
+                    .attr("transform", "translate(" + (0) + "," + (height - padding) + ")")
+                    .call(d3.axisBottom().scale(xScale))
+
+                pop_circles = svg2.selectAll("circle")
+                    .data(csvData)
+                    .enter()
+                    .append("circle")
+                    .attr("class", "inc-circles")
+                    .attr("cx", d => xScale(d.Mismanaged_plastic_waste_to_ocean_per_capita_kgperyear))
+                    .attr("cy", d => yScale(d.Mismanaged_plastic_waste_per_capita_kgperyear))
+                    .attr("r", 3)
+                    .attr("fill", "#98DFD6")
+                    .style("opacity", 0.5);
+
+                pop_circles.on("mouseover", function (d) {
+                    d3.select(this)
+                        .transition()
+                        .duration(200)
+                        .style("fill", "red")
+                        .attr("r", 10)
+                        .style("opacity", 1)
+
+                    cd = countries.features
+                    svg.selectAll("path")
+                        .transition()
+                        .duration(200)
+                        .filter(function (cd) {
+                            return cd.properties.name === d.Entity;
+                        })
+                        .style("fill", "red")
+
+                    svg3.selectAll("rect")
+                        .transition()
+                        .duration(200)
+                        .filter(function (csvData) { return d.Entity == csvData.Entity })
+                        .style("fill", "red")
+                })
+
+                pop_circles.on("mouseout", function (d) {
+                    svg2.selectAll("circle").style("fill", "#002B5B").attr("r", 3).style("opacity", 0.5)
+                    svg.selectAll("path")
+                        .transition()
+                        .duration(300)
+                        .style("fill", "#98DFD6")
+                    svg3.selectAll("rect").style("fill", "#060047")
+
+                })
+
+                width = 1625
+                height = 300
+
+                var xVal = (csvData, d => d.Entity)
+
+                var xScale = d3.scaleBand()
+                    .domain(csvData.map(xVal))
+                    .range([0 + padding + 40, width - padding])
+
+                var yScale = d3.scaleLinear()
+                    .domain([0, d3.max(csvData, d => d.Mismanaged_plastic_waste_to_ocean_per_capita_kgperyear)])
+                    .range([height - padding, 0 + padding])
+
+                svg3.append("g")
+                    .attr("class", "y-axis")
+                    .style("font-family", "sans-serif")
+                    .style("font-size", "0.75em")
+                    .attr("transform", "translate(" + (padding + 40) + "," + 0 + ")")
+                    .call(d3.axisLeft().scale(yScale))
+
+                svg3.append("g")
+                    .attr("class", "x-axis")
+                    .style("font-family", "sans-serif")
+                    .style("font-size", "0.75em")
+                    .attr("transform", "translate(" + (-5) + "," + (height - padding) + ")")
+                    .call(d3.axisBottom().scale(xScale))
+                    .selectAll("text")
+                    .style("text-anchor", "end")
+                    .attr("transform", "rotate(-90)")
+                    .attr("dy", 0)
+                    .attr("dx", 0);
+
+                rect = svg3.selectAll("rect")
+                    .data(csvData)
+                    .enter()
+                    .append("rect")
+                    .attr("x", d => xScale(d.Entity))
+                    .attr("y", d => yScale(d.Mismanaged_plastic_waste_to_ocean_per_capita_kgperyear))
+                    .attr("width", xScale.bandwidth())
+                    .attr("height", d => height - padding+5 - yScale(d.Mismanaged_plastic_waste_to_ocean_per_capita_kgperyear))
+                    .attr("fill", "#060047")
+
+                rect.on("mouseover", function (d) {
+                    d3.select(this)
+                        .transition()
+                        .duration(200)
+                        .style("fill", "red")
+                        .attr("scale", 10)
+
+                    cd = countries.features
+                    svg.selectAll("path")
+                        .transition()
+                        .duration(200)
+                        .filter(function (cd) {
+                            return cd.properties.name === d.Entity;
+                        })
+                        .style("fill", "red")
+
+                    svg2.selectAll("circle")
+                        .transition()
+                        .duration(200)
+                        .filter(function (cd) {
+                            return cd.Entity === d.Entity;
+                        })
+                        .style("fill", "red")
+                        .attr("r", 10)
+                        .style("opacity", 1)
+                })
+
+                rect.on("mouseout", function (d) {
+                    svg3.selectAll("rect").style("fill", "#060047")
+                    svg2.selectAll("circle").style("fill", "#002B5B").attr("r", 3).style("opacity", 0.5)
+                    svg.selectAll("path")
+                        .transition()
+                        .duration(300)
+                        .style("fill", "#98DFD6")
+                })
+
+            })
+
+        });
+
+    </script>
+</body>
+
+</html>

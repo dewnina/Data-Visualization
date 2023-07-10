@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    	<script src="https://cdn.rawgit.com/jasondavies/d3-cloud/master/build/d3.layout.cloud.js"></script>
+
+    <style>
+        body {
+            text-align: center;
+            background-color: rgba(255, 250, 234, 0.25);
+            margin: 1em;
+            padding: 0;
+        }
+
+        .content {
+            padding: 1em;
+        }
+
+        .row {
+            height: 70vh;
+            width: 100%;
+            justify-content: space-around;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="content">
+        <div class="row no-gutter">
+            <canvas id="plot5" class="col-6"></canvas>
+        </div>
+        <div class="row no-gutter">
+            <canvas id="plot2" class="col-3"></canvas>
+        </div>
+        <div class="row no-gutter">
+            <canvas id="plot4" class="col-6"></canvas>
+        </div>
+        <div class="row no-gutter">
+            <canvas id="plot6" class="col-6"></canvas>
+        </div>
+        <div class="row no-gutter">
+            <canvas id="plot7" class="col-6"></canvas>
+        </div>
+        <div class="row no-gutter">
+            <canvas id="plot10" class="col-6"></canvas>
+        </div>
+        <div class="row no-gutter">
+            <canvas id="plot11" class="col-6"></canvas>
+        </div>
+        <div class="row no-gutter">
+            <canvas id="plot12" class="col-6"></canvas>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="
+    https://cdn.jsdelivr.net/npm/chartjs-chart-treemap@2.3.0/dist/chartjs-chart-treemap.min.js
+    "></script>
+
+    <script>
+        d3.csv('/data4.csv').then(csvData => {
+            csvData.forEach(d => {
+                d.Mismanaged_plastic_waste_metric_tons_year = +d.Mismanaged_plastic_waste_metric_tons_year
+                d.Total_MismanagedPlasticWaste_2010_millionT = +d.Total_MismanagedPlasticWaste_2010_millionT
+                d.Total_MismanagedPlasticWaste_2019_millionT = +d.Total_MismanagedPlasticWaste_2019_millionT
+                d.Year = +d.Year
+                d.Global_plastics_production_million_tonnes = +d.Global_plastics_production_million_tonnes
+                d.total_msw_total_msw_generated_tons_year = +d.total_msw_total_msw_generated_tons_year
+                d.population_population_number_of_people = +d.population_population_number_of_people
+                d.total_value = +d.total_value
+            });
+            
+// Plot 3
+const ctxRadar = document.getElementById('plot2');
+const labelsRadar = [];
+const datasetRadar = [];
+var count = 10;
+csvData.forEach((d) => {
+    if (d.Entity != '' && d.Mismanaged_plastic_waste_metric_tons_year >= 1500000) {
+        labelsRadar.push(d.Entity);
+        datasetRadar.push(d.Mismanaged_plastic_waste_metric_tons_year);
+    }
+});
+
+const dataRadar = {
+    labels: labelsRadar,
+    datasets: [{
+        label: 'plastic waste tons/year',
+        data: datasetRadar,
+    }]
+}
+
+new Chart(ctxRadar, {
+    type: 'radar',
+    data: dataRadar,
+    options: {
+        elements: {
+            line: {
+                borderWidth: 3
+            }
+        },
+        plugins: {
+
+            title: {
+                display: true,
+                text: (ctx) => 'Countries with highest mismanaged plastic waste'
+            }
+        }
+    },
+});
+
+            // Plot 5
+            const ctxScatter = document.getElementById('plot5');
+            const dataScatter = [];
+            csvData.forEach((d) => {
+                    dataScatter.push({
+                        category: d.basic_waste_types,
+                        value: d.total_value
+                    })
+                
+            })
+            //console.log(dataScatter);
+            new Chart(ctxScatter, {
+                type: 'treemap',
+                data: {
+                    datasets: [
+                        {
+                            label: 'All Solid Wastes',
+                            tree: dataScatter,
+                            borderWidth: 1,
+                            key: 'value',
+                            groups: ['category'],
+                            spacing: 0,
+                        }
+                    ],
+                },
+                options: {
+                    plugins: {
+
+                        title: {
+                            display: true,
+                            text: 'TreeMap for solid waste types and showing the amount on average'
+                        },
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+
+            // Plot 6
+const ctxBar = document.getElementById('plot4');
+const dataBar = {
+    labels: [],
+    datasets: [{
+        label: 'Total Value',
+        data: [],
+        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1
+    }]
+};
+
+csvData.forEach((d) => {
+    dataBar.labels.push(d.country_name);
+    dataBar.datasets[0].data.push(d.total_msw_total_msw_generated_tons_year);
+});
+
+new Chart(ctxBar, {
+    type: 'bar',
+    data: dataBar,
+    options: {
+        plugins: {
+            title: {
+                display: true,
+                text: 'Bar Graph for on average solid waste generated by different countries'
+            },
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Total Value'
+                }
+            },
+            x: {
+                title: {
+                    display: true,
+                    text: 'Countires'
+                }
+            }
+        }
+    }
+});
+const ctxHistogram = document.getElementById('plot10');
+
+const labelsHistogram = [];
+const datasetHistogram = [];
+csvData.forEach((d) => {
+    if (d.Year != '' && d.Global_plastics_production_million_tonnes != '') {
+        labelsHistogram.push(d.Year);
+        datasetHistogram.push(parseFloat(d.Global_plastics_production_million_tonnes));
+    }
+});
+
+const dataHistogram = {
+    labels: labelsHistogram,
+    datasets: [{
+        label: 'plastic waste (Mt/year)',
+        data: datasetHistogram,
+        backgroundcolor:'rgba(255,0,0,0.3)',
+        bordercolor: 'red',
+        borderWidth: 1
+    }]
+}
+
+new Chart(ctxHistogram, {
+    type: 'bar',
+    data: dataHistogram,
+    options: {
+        plugins: {
+            title: {
+                display: true,
+                text: (ctx) => 'Plastic waste generation (Mt/year)'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Plot 7
+const ctxScatter2 = document.getElementById('plot12');
+const dataScatter2 = {
+    datasets: [{
+        label: 'Waste per Capita , GDP per Capita',
+        data: [],
+        backgroundColor: 'rgba(255, 99, 132, 0.5)',
+        borderColor: 'rgba(255, 99, 132, 1)',
+        borderWidth: 1,
+        pointRadius: 5,
+        pointHoverRadius: 7
+    }]
+};
+
+csvData.forEach((d) => {
+    const wastePerCapita = d.total_msw_total_msw_generated_tons_year / d.population_total;
+    const gdpPerCapita = d.gdp_per_capita_usd_current;
+    dataScatter2.datasets[0].data.push({x: gdpPerCapita, y: wastePerCapita, country: d.country_name});
+});
+
+const scatterChart2 = new Chart(ctxScatter2, {
+    type: 'scatter',
+    data: dataScatter2,
+    options: {
+        plugins: {
+            title: {
+                display: true,
+                text: 'Scatter Plot for Waste per Capita vs. GDP per Capita'
+            },
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            x: {
+                type: 'logarithmic',
+                title: {
+                    display: true,
+                    text: 'GDP per Capita (USD)'
+                },
+                ticks: {
+                    callback: function (value, index, values) {
+                        return value.toLocaleString();
+                    }
+                },
+                min: 1000, // set min value for x axis
+                max: 100000, // set max value for x axis
+            },
+            y: {
+                title: {
+                    display: true,
+                    text: 'Waste per Capita (tons)'
+                },
+                ticks: {
+                    callback: function (value, index, values) {
+                        return value.toFixed(2);
+                    }
+                },
+                min: 0, // set min value for y axis
+                max: 10, // set max value for y axis
+            }
+        },
+        tooltips: {
+            callbacks: {
+                label: function (tooltipItem, data) {
+                    const country = d.country_name;
+                    const xValue = tooltipItem.xLabel.toLocaleString();
+                    const yValue = tooltipItem.yLabel.toFixed(2);
+                    return `${country}: GDP per Capita ${xValue} USD, Waste per Capita ${yValue} tons`;
+                }
+            }
+        }
+    }
+});
+// Plot 6
+const ctxScatter3 = document.getElementById('plot11');
+const dataScatter3 = [];
+csvData.forEach((d) => {
+  dataScatter3.push({
+    x: d.total_value,
+    y: d.quantity,
+    label: d.basic_waste_types
+  })
+})
+
+new Chart(ctxScatter3, {
+  type: 'scatter',
+  data: {
+    datasets: [
+      {
+        label: 'All Solid Wastes',
+        data: dataScatter3,
+        borderWidth: 1,
+        pointBackgroundColor: 'rgba(255, 99, 132, 1)'
+      }
+    ]
+  },
+  options: {
+    plugins: {
+      title: {
+        display: true,
+        text: 'Scatter plot for solid waste types'
+      },
+      legend: {
+        display: false
+      }
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: 'Total value'
+        }
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'Quantity'
+        }
+      }
+    },
+    interaction: {
+      mode: 'nearest',
+      intersect: false,
+      axis: 'xy'
+    },
+    tooltip: {
+      mode: 'nearest',
+      intersect: false
+    }
+  }
+});
+});
+d3.csv('/data.csv').then(csvData => {
+    csvData.forEach(d => {
+        d.Mismanaged_plastic_waste_per_capita_kgperyear = +d.Mismanaged_plastic_waste_per_capita_kgperyear
+        d.Mismanaged_plastic_waste_to_ocean_per_capita_kgperyear = +d.Mismanaged_plastic_waste_to_ocean_per_capita_kgperyear
+        d.Entity = d.Entity
+        d.Code = +d.Code
+    });
+    const ctxPie1 = document.getElementById('plot6');
+    const dataPie1 = {
+        labels: [],
+        datasets: [
+            {
+                data: [],
+                backgroundColor: []
+            }
+        ]
+    };
+    csvData.forEach((d) => {
+        dataPie1.labels.push(d.Entity);
+        dataPie1.datasets[0].data.push(d.Mismanaged_plastic_waste_per_capita_kgperyear);
+        dataPie1.datasets[0].backgroundColor.push(getRandomColor());
+    });
+    // Sort the data in descending order based on the value field
+    dataPie1.datasets[0].data.sort((a, b) => b - a);
+    // Take only the top 15 data points
+    const topDataPie1 = dataPie1.labels.slice(0, 15);
+    dataPie1.labels = topDataPie1;
+    const topDataValuesPie1 = dataPie1.datasets[0].data.slice(0, 15);
+    dataPie1.datasets[0].data = topDataValuesPie1;
+    console.log(dataPie1);
+    function getRandomColor() {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+}
+    new Chart(ctxPie1, {
+        type: 'pie',
+        data: dataPie1,
+        options: {
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Top 15 countries which has the highest plastic wastage.'
+                },
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 15
+                    }
+                }
+            }
+        }
+    });
+const ctxBar2 = document.getElementById('plot7');
+// Initialize the data structure with empty arrays for each dataset
+const dataBar2 = {
+  labels: [],
+  datasets: [
+    {
+      label: 'Mismanaged plastic waste to ocean per capita (kg per year)',
+      data: [],
+      backgroundColor: 'rgb(64, 224, 208, 0.5)',
+      borderColor: 'rgb(64, 224, 208)',
+      borderWidth: 1
+    },
+    {
+      label: 'plastic waste  per capita (kg per year)',
+      data: [],
+      backgroundColor: 'rgb(255, 192, 203, 0.5)',
+      borderColor: 'rgb(255, 192, 203)',
+      borderWidth: 1
+    }
+  ]
+};
+
+// Iterate over the data and push the values to the corresponding dataset
+csvData.forEach((d) => {
+  dataBar2.labels.push(d.Entity);
+  dataBar2.datasets[0].data.push(d.Mismanaged_plastic_waste_to_ocean_per_capita_kgperyear);
+  dataBar2.datasets[1].data.push(d.Mismanaged_plastic_waste_per_capita_kgperyear);
+});
+
+// Draw the stacked bar graph
+new Chart(ctxBar2, {
+  type: 'bar',
+  data: dataBar2,
+  options: {
+    plugins: {
+      title: {
+        display: true,
+        text: 'Stacked Bar Graph for Plastic Waste to Ocean per Capita (kg per year)'
+      },
+      legend: {
+        display: true
+      }
+    },
+    scales: {
+      x: {
+        stacked: true,
+        title: {
+          display: true,
+          text: 'Countries'
+        }
+      },
+      y: {
+        stacked: true,
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Plastic Waste to Ocean (kg per year)'
+        }
+      }
+    }
+  }
+}); 
+});
+ </script>
+
+</body>
+
+</html>
